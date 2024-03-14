@@ -1,0 +1,736 @@
+Program.Sub.ScreenSU.Start
+Gui.frmLoading..Create
+Gui.frmLoading..Caption("Generating email....")
+Gui.frmLoading..Size(4905,765)
+Gui.frmLoading..MinX(0)
+Gui.frmLoading..MinY(0)
+Gui.frmLoading..Position(0,0)
+Gui.frmLoading..BackColor(-2147483633)
+Gui.frmLoading..ControlBox(False)
+Gui.frmLoading..MaxButton(False)
+Gui.frmLoading..MinButton(False)
+Gui.frmLoading..MousePointer(0)
+Gui.frmLoading..Sizeable(False)
+Gui.frmLoading..Event(UnLoad,frmLoading_UnLoad)
+Gui.frmLoading.progressBar1.Create(ProgressBar)
+Gui.frmLoading.progressBar1.Size(4665,255)
+Gui.frmLoading.progressBar1.Position(75,105)
+Gui.frmLoading.GsGCWODetails.Create(GsGridControl)
+Gui.frmLoading.GsGCWODetails.Size(4560,1065)
+Gui.frmLoading.GsGCWODetails.Position(135,765)
+Gui.frmUserEmails..Create
+Gui.frmUserEmails..Caption("Setup User Emails")
+Gui.frmUserEmails..Size(6570,5820)
+Gui.frmUserEmails..MinX(6575)
+Gui.frmUserEmails..MinY(5820)
+Gui.frmUserEmails..Position(0,0)
+Gui.frmUserEmails..BackColor(-2147483633)
+Gui.frmUserEmails..MousePointer(0)
+Gui.frmUserEmails..Event(UnLoad,frmUserEmails_UnLoad)
+Gui.frmUserEmails.lblSelUser.Create(Label,"Select User",True,1935,255,0,45,195,True,0,"Arial",8,-2147483633,0)
+Gui.frmUserEmails.cboUser.Create(ComboBox)
+Gui.frmUserEmails.cboUser.Size(2700,330)
+Gui.frmUserEmails.cboUser.Position(45,405)
+Gui.frmUserEmails.cmdAdd.Create(Button)
+Gui.frmUserEmails.cmdAdd.Size(615,375)
+Gui.frmUserEmails.cmdAdd.Position(2790,375)
+Gui.frmUserEmails.cmdAdd.Caption("Add")
+Gui.frmUserEmails.cmdAdd.Event(Click,cmdAdd_Click)
+Gui.frmUserEmails.GsGCUserEmails.Create(GsGridControl)
+Gui.frmUserEmails.GsGCUserEmails.Size(6360,4350)
+Gui.frmUserEmails.GsGCUserEmails.Position(45,780)
+Gui.frmUserEmails.GsGCUserEmails.Anchor(15)
+Gui.frmUserEmails.cmdSave.Create(Button)
+Gui.frmUserEmails.cmdSave.Size(855,375)
+Gui.frmUserEmails.cmdSave.Position(5550,5160)
+Gui.frmUserEmails.cmdSave.Anchor(10)
+Gui.frmUserEmails.cmdSave.Caption("Save")
+Gui.frmUserEmails.cmdSave.Event(Click,cmdSave_Click)
+Gui.frmUserEmails.txtSenderName.Create(TextBox,"",True,1800,300,0,4605,60,True,0,"Arial",8,-2147483643,1)
+Gui.frmUserEmails.txtSenderName.Anchor(9)
+Gui.frmUserEmails.txtSenderEmail.Create(TextBox,"",True,1800,300,0,4605,405,True,0,"Arial",8,-2147483643,1)
+Gui.frmUserEmails.txtSenderEmail.Anchor(9)
+Gui.frmUserEmails.lblSenderName.Create(Label,"Sender Name",True,1095,255,0,3480,150,True,0,"Arial",8,-2147483633,0)
+Gui.frmUserEmails.lblSenderName.Anchor(9)
+Gui.frmUserEmails.lblSenderEmail.Create(Label,"Sender Email",True,1095,255,0,3480,495,True,0,"Arial",8,-2147483633,0)
+Gui.frmUserEmails.lblSenderEmail.Anchor(9)
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sIcon.Declare
+
+	F.Intrinsic.Control.SelectCase(V.Caller.Hook)
+		F.Intrinsic.Control.Case(16080)
+			'Get WO Data and store in Temp\GSS as html file
+			F.Intrinsic.Control.CallSub(GetWOData)
+		
+		F.Intrinsic.Control.Case(16081)
+			'Check that WO is Deleted
+			F.Intrinsic.Control.If(V.Passed.000035,<>,"")
+				F.Intrinsic.Control.CallSub(CheckWO)
+				F.Intrinsic.Control.If(V.Args.Deleted)
+					F.Intrinsic.Control.CallSub(EmailWOData)
+				F.Intrinsic.Control.Else
+					'Delete Html Files
+					F.Intrinsic.Control.CallSub(DeleteHTMLFiles)
+				F.Intrinsic.Control.EndIf
+			F.Intrinsic.Control.EndIf
+			
+		F.Intrinsic.Control.CaseElse
+			F.ODBC.Connection!con.OpenCompanyConnection
+			F.Intrinsic.String.Build("{0}\gss2.ico",V.Caller.ArtDir,V.Local.sIcon)
+			Gui.frmUserEmails..Icon(V.Local.sIcon)
+			Gui.frmUserEmails..Show
+			F.Intrinsic.Control.CallSub(SetContextMenus)
+			F.Intrinsic.Control.CallSub(SetupUserEmails)
+			
+	F.Intrinsic.Control.EndSelect
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.Main.End
+
+Program.Sub.frmLoading_UnLoad.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	F.Intrinsic.Control.End
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmLoading_UnLoad.End
+
+Program.Sub.GetWOData.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sSQL.Declare
+	V.Local.sHtml.Declare
+	
+	F.ODBC.Connection!con.OpenCompanyConnection(300)
+	
+	'Header
+	'F.Intrinsic.String.Build("Select JOB, SUFFIX, PART, LOCATION, DESCRIPTION, CUSTOMER, '{0}' AS NAME_CUSTOMER, CUSTOMER_PO, DATE_OPENED, DATE_START, DATE_DUE, QTY_ORDER, QTY_COMPLETED, AMT_MATERIAL, AMT_LABOR, AMT_OVERHEAD, FLAG_WO_PRTD, FLAG_WO_RELEASED From V_JOB_HEADER WHERE JOB = '{1}' AND SUFFIX = '{2}';",V.Passed.000026,V.Passed.000035,V.Passed.000017,V.Local.sSQL)
+	F.Intrinsic.String.Build("Select JOB, SUFFIX, PART, LOCATION, DESCRIPTION, CUSTOMER, '{0}' AS NAME_CUSTOMER, CUSTOMER_PO, DATE_DUE From V_JOB_HEADER WHERE JOB = '{1}' ORDER BY JOB, SUFFIX;",V.Passed.000026,V.Passed.000035,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("JobHeader","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.CallSub(FormatGrids,"DT","JobHeader")
+	F.Intrinsic.String.Build("{0}JobHeader.html",V.Caller.LocalGSSTempDir,V.Local.sHtml)
+	Gui.frmLoading.GsGCWODetails.Export(V.Local.sHtml,"html")
+	
+	'Operations and PO Info
+	F.Intrinsic.String.Build("Select A.JOB, A.SUFFIX, A.SEQ, A.LMO, A.PART, A.DESCRIPTION, A.FLAG_CLOSED, B.PURCHASE_ORDER AS PO, B.RECORD_NO AS PO_LINE, B.DATE_DUE_LINE AS PO_LINE_DUE_DATE, B.FLAG_RECV_CLOSE AS PO_LINE_CLOSED From V_JOB_OPERATIONS A Left Join V_PO_LINES B ON A.JOB = B.JOB And A.SUFFIX = B.SUFFIX And A.SEQ < B.SEQUENCE Where A.JOB = '{0}' And A.SEQ < '995000' AND A.LMO <> 'C' Order By A.JOB, A.SUFFIX, A.SEQ;",V.Passed.000035,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("JobOperations","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.CallSub(FormatGrids,"DT","JobOperations")
+	F.Intrinsic.String.Build("{0}JobOperations.html",V.Caller.LocalGSSTempDir,V.Local.sHtml)
+	Gui.frmLoading.GsGCWODetails.Export(V.Local.sHtml,"html")
+	
+	F.ODBC.Connection!con.Close
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.GetWOData.End
+
+Program.Sub.FormatGrids.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.iCnt.Declare
+	V.Local.sColumn.Declare
+
+	Gui.frmLoading.GsGCWODetails.AddGridviewFromDataTable("GV",V.Args.DT)
+	Gui.frmLoading.GsGCWODetails.SuspendLayout()
+
+	'Loop through columns names by using the V.DataTable.dtName.FieldNames
+	F.Intrinsic.String.Split(V.DataTable.[V.Args.DT].FieldNames,"*!*",V.Local.sColumn)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.sColumn.UBound,1)
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn(V.Local.iCnt),"HeaderFontBold",True)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+	
+	F.Intrinsic.Control.If(V.Args.DT,=,"JobHeader")
+		'Header
+		'JOB
+		V.Local.sColumn.Set("JOB")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Job")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","75")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		'SUFFIX
+		V.Local.sColumn.Set("SUFFIX")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Suffix")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","45")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		'PART
+		V.Local.sColumn.Set("PART")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Part")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","125")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		'LOCATION
+		V.Local.sColumn.Set("LOCATION")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Loc")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","35")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		'DESCRIPTION
+		V.Local.sColumn.Set("DESCRIPTION")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Description")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","200")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		'CUSTOMER
+		V.Local.sColumn.Set("CUSTOMER")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Cust No")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","55")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		'NAME_CUSTOMER
+		V.Local.sColumn.Set("NAME_CUSTOMER")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Cust Name")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","150")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		'CUSTOMER_PO
+		V.Local.sColumn.Set("CUSTOMER_PO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Cust PO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","115")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		'DATE_DUE
+		V.Local.sColumn.Set("DATE_DUE")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Due Date")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","75")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"DisplayCustomDatetime","d")
+	F.Intrinsic.Control.Else
+		'Operations
+		 'JOB
+		V.Local.sColumn.Set("JOB")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Job")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","75")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'SUFFIX
+		V.Local.sColumn.Set("SUFFIX")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Suffix")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","45")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'SEQ
+		V.Local.sColumn.Set("SEQ")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Seq")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","55")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'LMO
+		V.Local.sColumn.Set("LMO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","LMO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","35")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'PART
+		V.Local.sColumn.Set("PART")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Part")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","125")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		 'DESCRIPTION
+		V.Local.sColumn.Set("DESCRIPTION")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Description")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","200")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Left")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Left")
+		 'FLAG_CLOSED
+		V.Local.sColumn.Set("FLAG_CLOSED")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","Seq Closed")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","65")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'PO
+		V.Local.sColumn.Set("PO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","PO")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","75")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'PO_LINE
+		V.Local.sColumn.Set("PO_LINE")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","PO Ln")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","45")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		 'PO_LINE_DUE_DATE
+		V.Local.sColumn.Set("PO_LINE_DUE_DATE")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","PO Ln Due Date")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","85")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"DisplayCustomDatetime","d")
+		 'PO_LINE_CLOSED
+		V.Local.sColumn.Set("PO_LINE_CLOSED")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"Caption","PO Ln Closed")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"MinWidth","75")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"HeaderHAlignment","Center")
+		Gui.frmLoading.GsGCWODetails.SetColumnProperty("GV",V.Local.sColumn,"CellHAlignment","Center")
+	F.Intrinsic.Control.EndIf
+	
+	Gui.frmLoading.GsGCWODetails.ResumeLayout()
+	Gui.frmLoading.GsGCWODetails.MainView("GV")
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Subroutine: {1}{0}Error Occurred {2} with description {3}{0}{0}GAB Version: {4}",V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.CallSub(LogError,"Error",V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.FormatGrids.End
+
+Program.Sub.CheckWO.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sSQL.Declare
+	V.Local.sHtml.Declare
+	V.Local.bDeleted.Declare
+	
+	F.ODBC.Connection!con.OpenCompanyConnection(300)
+	
+	'Header
+	V.Local.bDeleted.Set(False)
+	F.Intrinsic.String.Build("Select JOB, SUFFIX From V_JOB_HEADER WHERE JOB = '{0}' AND SUFFIX = '{1}';",V.Passed.000035,V.Passed.000017,V.Local.sSQL)
+	F.Data.DataTable.CreateFromSQL("JobHeader","con",V.Local.sSQL,True)
+	F.Intrinsic.Control.If(V.DataTable.JobHeader.RowCount,=,0)
+		V.Local.bDeleted.Set(True)
+	F.Intrinsic.Control.EndIf
+	
+	F.ODBC.Connection!con.Close
+	
+	F.Intrinsic.Variable.AddRV("Deleted",V.Local.bDeleted)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.CheckWO.End
+
+Program.Sub.EmailWOData.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.sExportHTML.Declare
+	V.Local.sExportPath.Declare
+	
+	V.Local.sHeaderString.Declare
+	V.Local.sHeaderHTML.Declare
+	V.Local.sHeaderHTMLFile.Declare
+	
+	V.Local.sOperationsString.Declare
+	V.Local.sOperationsHTML.Declare
+	V.Local.sOperationsHTMLFile.Declare
+	
+	V.Local.sSubject.Declare
+	V.Local.bFileExists.Declare
+	V.Local.sSenderFile.Declare
+	V.Local.sSenderData.Declare
+	V.Local.sSender.Declare
+	V.Local.sName.Declare
+	V.Local.sEmail.Declare
+	V.Local.sRcpts.Declare
+	V.Local.iCnt.Declare
+	V.Local.sAttachment.Declare
+	
+	F.Intrinsic.String.Build("Work Order Deleted || Job: {0} Suffix: {1}",V.Passed.000035,V.Passed.000017,V.Local.sSubject)
+	
+	V.Local.sExportPath.Set(V.Caller.LocalGSSTempDir)
+	V.Local.sHeaderHTMLFile.Set("JobHeader.html")
+	V.Local.sOperationsHTMLFile.Set("JobOperations.html")
+	F.Intrinsic.String.Build("{0}\{1}",V.Local.sExportPath,V.Local.sHeaderHTMLFile,V.Local.sHeaderHTML)
+	F.Intrinsic.String.Build("{0}\{1}",V.Local.sExportPath,V.Local.sOperationsHTMLFile,V.Local.sOperationsHTML)
+	F.Intrinsic.String.Build("{1}*!*{0}@!@{2}*!*{0}",V.Local.sExportPath,V.Local.sHeaderHTMLFile,V.Local.sOperationsHTMLFile,V.Local.sAttachment)
+		
+	'Load Sender Information
+	F.Intrinsic.String.Build("{0}\GAB_5432_Delete_WO_Sender.txt",V.Caller.GasDir,V.Local.sSenderFile)
+	F.Intrinsic.File.Exists(V.Local.sSenderFile,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists)
+		F.Intrinsic.File.File2String(V.Local.sSenderFile,V.Local.sSenderData)
+		F.Intrinsic.Control.If(V.Local.sSenderData.Trim,<>,"")
+			F.Intrinsic.String.Split(V.Local.sSenderData,V.Ambient.NewLine,V.Local.sSenderData)
+			F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sSenderData(1),V.Local.sSenderData(0),V.Local.sSender)
+		F.Intrinsic.Control.Else
+			F.Intrinsic.Debug.SetLA("Sender file is empty., Emails will not go out.")
+			F.Intrinsic.Control.ExitSub
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Debug.SetLA("Sender file missing. Emails will not go out.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	
+	'Get Recipients from GAB_5432_EMAIL_USERS
+	F.ODBC.Connection!con.OpenCompanyConnection
+	F.Data.DataTable.CreateFromSQL("dtUsersEmails","con","Select USER_ID, GS_USER From GAB_5432_EMAIL_USERS Order By GS_USER;",True)
+	F.ODBC.Connection!con.Close
+	F.Intrinsic.Control.If(V.DataTable.dtUsersEmails.RowCount,<>,0)
+		F.Intrinsic.Control.For(V.Local.iCnt,0,V.DataTable.dtUsersEmails.RowCount--,1)
+			'Get Full Name
+			F.Global.Security.GetFullName(V.DataTable.dtUsersEmails(V.Local.iCnt).GS_USER!FieldValTrim,V.Caller.CompanyCode,V.Local.sName)
+			'Get Email
+			F.Global.Security.GetUserEmail(V.DataTable.dtUsersEmails(V.Local.iCnt).GS_USER!FieldValTrim,V.Caller.CompanyCode,V.Local.sEmail)
+			F.Intrinsic.Control.If(V.Local.iCnt,=,0)
+				F.Intrinsic.String.Build("{0}*!*{1}",V.Local.sName,V.Local.sEmail,V.Local.sRcpts)
+			F.Intrinsic.Control.Else
+				F.Intrinsic.String.Build("{0}@!@{1}*!*{2}",V.Local.sRcpts,V.Local.sName,V.Local.sEmail,V.Local.sRcpts)
+			F.Intrinsic.Control.EndIf
+		F.Intrinsic.Control.Next(V.Local.iCnt)
+	F.Intrinsic.Control.Else
+		F.Intrinsic.Debug.SetLA("No Recipients in GAB_5432_EMAIL_USERS. Emails will not go out.")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+		
+	F.Intrinsic.File.File2String(V.Local.sHeaderHTML,V.Local.sHeaderString)
+	F.Intrinsic.File.File2String(V.Local.sOperationsHTML,V.Local.sOperationsString)
+	F.Intrinsic.String.Build("<p><b>Job Header Info</b></p>{0}<p><b>Job Operation Info</b></p>{1}",V.Local.sHeaderString,V.Local.sOperationsString,V.Local.sExportHTML)
+	F.Intrinsic.String.Build("<b>Job Header Info</b><br>{0}<br><br><b>Job Operation Info</b><br>{1}",V.Local.sHeaderString,V.Local.sOperationsString,V.Local.sExportHTML)
+	'Send Email
+	F.Global.Messaging.QueueMessage(V.Caller.CompanyCode,0,"",V.Local.sSubject,V.Local.sSender,V.Local.sRcpts,V.Local.sSubject,5,"",False,"","","","","","","",V.Local.sAttachment,False,V.Local.sExportHTML)
+	
+	'Delete Html Files
+	F.Intrinsic.Control.CallSub(DeleteHTMLFiles)
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.EmailWOData.End
+
+Program.Sub.DeleteHTMLFiles.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sHTMLFile.Declare
+	V.Local.bFileExists.Declare
+	
+	'JobHeader
+	F.Intrinsic.String.Build("{0}JobHeader.html",V.Caller.LocalGSSTempDir,V.Local.sHTMLFile)
+	F.Intrinsic.File.Exists(V.Local.sHTMLFile,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists)
+		F.Intrinsic.File.DeleteFile(V.Local.sHTMLFile)
+	F.Intrinsic.Control.EndIf
+	
+	'JobOperations
+	F.Intrinsic.String.Build("{0}JobOperations.html",V.Caller.LocalGSSTempDir,V.Local.sHTMLFile)
+	F.Intrinsic.File.Exists(V.Local.sHTMLFile,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists)
+		F.Intrinsic.File.DeleteFile(V.Local.sHTMLFile)
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.DeleteHTMLFiles.End
+
+Program.Sub.SetContextMenus.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	Gui.frmUserEmails..ContextMenuCreate("ctxSetup")
+	Gui.frmUserEmails.GsGCUserEmails.ContextMenuAttach("ctxSetup")
+	Gui.frmUserEmails..ContextMenuAddItem("ctxSetup","Delete",0,"Delete")
+	Gui.frmUserEmails..ContextMenuAddItem("ctxSetup","Refresh",0,"Refresh")
+	Gui.frmUserEmails..ContextMenuAddItem("ctxSetup","Export",0,"Export")
+	Gui.frmUserEmails..ContextMenuSetItemEventHandler("ctxSetup","Delete","DeleteRecord")
+	Gui.frmUserEmails..ContextMenuSetItemEventHandler("ctxSetup","Refresh","LoadUserEmails")
+	Gui.frmUserEmails..ContextMenuSetItemEventHandler("ctxSetup","Export","ExportGrid")
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.SetContextMenus.End
+
+Program.Sub.DeleteRecord.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.iRow.Declare
+	
+	Gui.frmUserEmails.GsGCUserEmails.GetSelectedRows("gvUsersEmails",V.Local.iRow)
+	F.Data.DataTable.DeleteRow("dtUsersEmails",V.Local.iRow)
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.DeleteRecord.End
+
+Program.Sub.ExportGrid.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sFileExport.Declare
+	V.Local.bExcel.Declare
+	V.Local.bFileLocked.Declare
+	V.Local.sMsg.Declare
+	V.Local.sExt.Declare
+	
+	F.Automation.MSExcel.CheckPresence(V.Local.bExcel)
+	F.Intrinsic.Control.If(V.Local.bExcel)
+		V.Local.sExt.Set("xlsx")
+	F.Intrinsic.Control.Else
+		V.Local.sExt.Set("csv")
+	F.Intrinsic.Control.EndIf
+	
+	F.Intrinsic.String.Build("{0}\GAB_5432_UserEmail_Setup.{1}",V.Caller.LocalGssTempDir,V.Local.sExt,V.Local.sFileExport)
+	F.Intrinsic.File.IsFileLocked(V.Local.sFileExport,V.Local.bFileLocked)
+	F.Intrinsic.Control.If(V.Local.bFileLocked)
+		F.Intrinsic.String.Build("File is already open. Please close and export again.{0}File: {1}",V.Ambient.NewLine,V.Local.sFileExport,V.Local.sMsg)
+		F.Intrinsic.UI.Msgbox(V.Local.sMsg,"File In Use")
+	F.Intrinsic.Control.Else
+		Gui.frmUserEmails.GsGCUserEmails.Export(V.Local.sFileExport,V.Local.sExt)
+		F.Intrinsic.Task.ShellExec(0,"",V.Local.sFileExport,"","",1)
+	F.Intrinsic.Control.EndIf
+	
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.ExportGrid.End
+
+Program.Sub.frmUserEmails_UnLoad.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	F.ODBC.Connection!con.Close
+	F.Intrinsic.Control.End
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.frmUserEmails_UnLoad.End
+
+Program.Sub.SetupUserEmails.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	'Load Combobox with Users
+	F.ODBC.Connection!common.OpenCommonConnection
+	F.Data.DataTable.CreateFromSQL("dtUsers","common","Select USER_ID, GS_USER, FIRST_NAME+' '+LAST_NAME AS NAME From USER_INFORMATION Order By GS_USER;",True)
+	F.ODBC.Connection!common.Close
+	Gui.frmUserEmails.cboUser.AddItems("DataTable","dtUsers","USER_ID","NAME")
+	
+	'Load Current Data
+	F.Intrinsic.Control.CallSub(LoadUserEmails)
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.SetupUserEmails.End
+
+Program.Sub.LoadUserEmails.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.iCnt.Declare
+	V.Local.sName.Declare
+	V.Local.sEmail.Declare
+	V.Local.sSenderFile.Declare
+	V.Local.sSenderData.Declare
+	V.Local.bFileExists.Declare
+	
+	F.Intrinsic.Control.If(V.DataTable.dtUsersEmails.Exists)
+		F.Data.DataTable.Close("dtUsersEmails")
+	F.Intrinsic.Control.EndIf
+	
+	F.Data.DataTable.CreateFromSQL("dtUsersEmails","con","Select USER_ID, GS_USER From GAB_5432_EMAIL_USERS Order By GS_USER;",True)
+	F.Data.DataTable.AddColumn("dtUsersEmails","NAME",String,"")
+	F.Data.DataTable.AddColumn("dtUsersEmails","EMAIL",String,"")
+	
+	'Load Names and Emails
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.DataTable.dtUsersEmails.RowCount--,1)
+		'Get Full Name
+		F.Global.Security.GetFullName(V.DataTable.dtUsersEmails(V.Local.iCnt).GS_USER!FieldValTrim,V.Caller.CompanyCode,V.Local.sName)
+		'Get Email
+		F.Global.Security.GetUserEmail(V.DataTable.dtUsersEmails(V.Local.iCnt).GS_USER!FieldValTrim,V.Caller.CompanyCode,V.Local.sEmail)
+		'Set Full Name and Email
+		F.Data.DataTable.SetValue("dtUsersEmails",V.Local.iCnt,"NAME",V.Local.sName,"EMAIL",V.Local.sEmail)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+	
+	F.Intrinsic.Control.CallSub(LoadUserEmailsGV)
+	
+	'Load Sender Information
+	F.Intrinsic.String.Build("{0}\GAB_5432_Delete_WO_Sender.txt",V.Caller.GasDir,V.Local.sSenderFile)
+	F.Intrinsic.File.Exists(V.Local.sSenderFile,V.Local.bFileExists)
+	F.Intrinsic.Control.If(V.Local.bFileExists)
+		F.Intrinsic.File.File2String(V.Local.sSenderFile,V.Local.sSenderData)
+		F.Intrinsic.String.Split(V.Local.sSenderData,V.Ambient.NewLine,V.Local.sSenderData)
+		Gui.frmUserEmails.txtSenderName.Text(V.Local.sSenderData(0))
+		Gui.frmUserEmails.txtSenderEmail.Text(V.Local.sSenderData(1))
+	F.Intrinsic.Control.EndIf
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadUserEmails.End
+
+Program.Sub.LoadUserEmailsGV.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+
+	V.Local.iCnt.Declare
+	V.Local.sColumn.Declare
+
+	Gui.frmUserEmails.GsGCUserEmails.AddGridviewFromDataTable("gvUsersEmails","dtUsersEmails")
+	Gui.frmUserEmails.GsGCUserEmails.SuspendLayout()
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","MultiSelect",True)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","Editable",False)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","ReadOnly",True)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","AllowSort",True)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","AllowFilter",True)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","ShowDetailTabs",False)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","ShowGroupPanel",False)
+	Gui.frmUserEmails.GsGCUserEmails.SetGridviewProperty("gvUsersEmails","EnableAppearanceOddRow",True)
+
+	'Loop through columns names by using the V.DataTable.dtName.FieldNames
+	F.Intrinsic.String.Split(V.DataTable.dtUsersEmails.FieldNames,"*!*",V.Local.sColumn)
+	F.Intrinsic.Control.For(V.Local.iCnt,0,V.Local.sColumn.UBound,1)
+		Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn(V.Local.iCnt),"HeaderFontBold",True)
+	F.Intrinsic.Control.Next(V.Local.iCnt)
+	
+	'USER_ID
+	V.Local.sColumn.Set("USER_ID")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Visible",False)
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Caption","User ID")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"MinWidth","45")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"HeaderHAlignment","Left")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"CellHAlignment","Left")
+	
+	'GS_USER
+	V.Local.sColumn.Set("GS_USER")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Visible",False)
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Caption","User")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"MinWidth","45")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"HeaderHAlignment","Left")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"CellHAlignment","Left")
+	
+	'NAME
+	V.Local.sColumn.Set("Name")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Caption",V.Local.sColumn)
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"MinWidth","125")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"HeaderHAlignment","Left")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"CellHAlignment","Left")
+	
+	'EMAIL
+	V.Local.sColumn.Set("Email")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"Caption",V.Local.sColumn)
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"MinWidth","125")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"HeaderHAlignment","Left")
+	Gui.frmUserEmails.GsGCUserEmails.SetColumnProperty("gvUsersEmails",V.Local.sColumn,"CellHAlignment","Left")
+	
+	Gui.frmUserEmails.GsGCUserEmails.ResumeLayout()
+	Gui.frmUserEmails.GsGCUserEmails.MainView("gvUsersEmails")
+	
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.LoadUserEmailsGV.End
+
+Program.Sub.cmdAdd_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.iUserID.Declare
+	V.Local.sUsername.Declare
+	V.Local.sUserEmail.Declare
+	V.Local.sExp.Declare
+	V.Local.sSelect.Declare
+	
+	F.Intrinsic.Control.If(V.Screen.frmUserEmails!cboUser.Value,=,"")
+		F.Intrinsic.Control.ExitSub
+	F.Intrinsic.Control.EndIf
+	
+	V.Local.iUserID.Set(V.Screen.frmUserEmails!cboUser.ItemData)
+	F.Intrinsic.String.Build("USER_ID = {0}",V.Local.iUserID,V.Local.sExp)
+	F.Data.DataTable.Select("dtUsersEmails",V.Local.sExp,V.Local.sSelect)
+	F.Intrinsic.Control.If(V.Local.sSelect.IsNoReturn)
+		'Get Username
+		F.Global.Security.GetUsernameFromID(V.Local.iUserID,V.Local.sUsername)
+		'Get User Email
+		F.Intrinsic.String.Split(V.Local.sUsername,"*!*",V.Local.sUsername)
+		F.Global.Security.GetUserEmail(V.Local.sUsername(0),V.Caller.CompanyCode,V.Local.sUserEmail)
+		F.Intrinsic.Control.If(V.Local.sUserEmail.Trim,=,"")
+			F.Intrinsic.UI.Msgbox("The selected users does not have an email setup in System Support > File > User Security Maintenance. Please assign an email and try again.","No Email")
+		F.Intrinsic.Control.Else
+			'Add New Record
+			F.Data.DataTable.AddRow("dtUsersEmails","USER_ID",V.Local.iUserID,"GS_USER",V.Local.sUsername,"NAME",V.Screen.frmUserEmails!cboUser.Value,"EMAIL",V.Local.sUserEmail)
+		F.Intrinsic.Control.EndIf
+	F.Intrinsic.Control.EndIf
+	
+	Gui.frmUserEmails.cboUser.Text("")
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdAdd_Click.End
+
+Program.Sub.cmdSave_Click.Start
+	F.Intrinsic.Control.Try
+	V.Local.sError.Declare
+	
+	V.Local.sSenderName.Declare
+	V.Local.sSenderEmail.Declare
+	V.Local.sSenderFile.Declare
+	V.Local.sSenderData.Declare
+	
+	'Save Recipients
+	F.Data.DataTable.SaveToDB("dtUsersEmails","con","GAB_5432_EMAIL_USERS","USER_ID*!*GS_USER",7,"USER_ID@!@USER_ID*!*GS_USER@!@GS_USER")
+	
+	'Save Sender Information
+	F.Intrinsic.String.Build("{0}\GAB_5432_Delete_WO_Sender.txt",V.Caller.GasDir,V.Local.sSenderFile)
+	V.Local.sSenderName.Set(V.Screen.frmUserEmails!txtSenderName.Text)
+	V.Local.sSenderEmail.Set(V.Screen.frmUserEmails!txtSenderEmail.Text)
+	F.Intrinsic.String.Build("{1}{0}{2}",V.Ambient.NewLine,V.Local.sSenderName.Trim,V.Local.sSenderEmail.Trim,V.Local.sSenderData)
+	F.Intrinsic.File.String2File(V.Local.sSenderFile,V.Local.sSenderData)
+	
+	F.Intrinsic.Control.CallSub(LoadUserEmails)
+
+	F.Intrinsic.Control.Catch
+		F.Intrinsic.String.Build("Project: {0}{1}{1}Subroutine: {2}{1}Error Occurred {3} with description {4}{1}{1}GAB Version: {5}",V.Ambient.ScriptPath,V.Ambient.Newline,V.Ambient.CurrentSubroutine,V.Ambient.ErrorNumber,V.Ambient.ErrorDescription,V.Ambient.GABVersion,V.Local.sError)
+		F.Intrinsic.UI.Msgbox(V.Local.sError)
+		F.Intrinsic.Control.End 
+	F.Intrinsic.Control.EndTry
+Program.Sub.cmdSave_Click.End
+
+Program.Sub.Comments.Start
+Program.Sub.Comments.End
